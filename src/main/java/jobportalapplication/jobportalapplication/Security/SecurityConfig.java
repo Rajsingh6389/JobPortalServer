@@ -78,7 +78,7 @@ public class SecurityConfig {
                 "http://localhost:5173",
                 "https://*.netlify.app",
                 "https://sparkling-medovik-f868d7.netlify.app",
-                "https://jobportalapplication-production.up.railway.app",
+                "https://jobportalserver-production-0346.up.railway.app",
                 "*"   // ← optional for testing; remove in production if needed
         ));
 
