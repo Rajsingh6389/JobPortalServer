@@ -40,8 +40,9 @@ public class GeminiAIService {
         CloseableHttpClient client = HttpClients.createDefault();
 
         // ✅ Correct final URL
-        URI uri = URI.create(apiUrl + apiKey);
-        System.out.println("Calling Gemini URL: " + apiUrl + apiKey);
+        URI uri = URI.create(apiUrl + "?key=" + apiKey);
+        System.out.println("Calling Gemini URL: " + apiUrl + "?key=" + apiKey);
+
 
 
         HttpPost post = new HttpPost(uri);
