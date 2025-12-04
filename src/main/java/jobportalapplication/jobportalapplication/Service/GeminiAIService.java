@@ -38,7 +38,9 @@ public class GeminiAIService {
                 """ + prompt;
 
         CloseableHttpClient client = HttpClients.createDefault();
-        URI uri = URI.create(apiUrl + "?key=" + apiKey);
+
+        // ✅ Correct final URL
+        URI uri = URI.create(apiUrl + apiKey);
 
         HttpPost post = new HttpPost(uri);
         post.addHeader("Content-Type", "application/json");
@@ -66,7 +68,6 @@ public class GeminiAIService {
 
             Map data = mapper.readValue(entity.getContent(), Map.class);
 
-            // NEW FORMAT
             List candidates = (List) data.get("candidates");
             if (candidates == null || candidates.isEmpty()) {
                 return "Gemini Error: candidates empty (wrong model endpoint or invalid key).";
