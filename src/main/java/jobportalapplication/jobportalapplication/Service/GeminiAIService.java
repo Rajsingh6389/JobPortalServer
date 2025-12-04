@@ -39,18 +39,21 @@ public class GeminiAIService {
 
         CloseableHttpClient client = HttpClients.createDefault();
 
-        // ✅ Correct final URL
+        // FINAL URL
         URI uri = URI.create(apiUrl + "?key=" + apiKey);
-        System.out.println("Calling Gemini URL: " + apiUrl + "?key=" + apiKey);
-
-
+        System.out.println("Calling Gemini URL: " + uri);
 
         HttpPost post = new HttpPost(uri);
         post.addHeader("Content-Type", "application/json");
 
+
+        /* -----------------------------------------
+         *  FIXED REQUEST BODY (new Gemini standard)
+         * ----------------------------------------- */
         Map<String, Object> body = Map.of(
                 "contents", List.of(
                         Map.of(
+                                "role", "user",
                                 "parts", List.of(
                                         Map.of("text", finalPrompt)
                                 )
@@ -71,29 +74,33 @@ public class GeminiAIService {
 
             Map data = mapper.readValue(entity.getContent(), Map.class);
 
+            // Debug raw response
+            System.out.println("Gemini RAW Response: " + data);
+
             List candidates = (List) data.get("candidates");
             if (candidates == null || candidates.isEmpty()) {
-                return "Gemini Error: candidates empty (wrong model endpoint or invalid key).";
+                return "Gemini Error: candidates empty.";
             }
 
-            Map firstCandidate = (Map) candidates.get(0);
-            Map content = (Map) firstCandidate.get("content");
+            Map candidate = (Map) candidates.get(0);
+            Map content = (Map) candidate.get("content");
 
             List parts = (List) content.get("parts");
+            if (parts == null || parts.isEmpty()) {
+                return "Gemini Error: no response parts.";
+            }
 
             StringBuilder result = new StringBuilder();
             for (Object p : parts) {
                 Map part = (Map) p;
-                if (part.containsKey("text")) {
-                    result.append(part.get("text").toString()).append("\n");
+                Object text = part.get("text");
+                if (text != null) {
+                    result.append(text.toString()).append("\n");
                 }
             }
 
-            if (result.toString().isBlank()) {
-                return "Gemini Error: No text returned from model.";
-            }
-
-            return result.toString().trim();
+            String output = result.toString().trim();
+            return output.isEmpty() ? "Gemini Error: Empty text returned." : output;
         }
     }
 }
