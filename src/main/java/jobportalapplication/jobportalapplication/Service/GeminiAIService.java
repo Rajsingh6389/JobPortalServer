@@ -41,6 +41,8 @@ public class GeminiAIService {
 
         // ✅ Correct final URL
         URI uri = URI.create(apiUrl + apiKey);
+        System.out.println("Calling Gemini URL: " + apiUrl + apiKey);
+
 
         HttpPost post = new HttpPost(uri);
         post.addHeader("Content-Type", "application/json");
