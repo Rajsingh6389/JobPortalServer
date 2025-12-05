@@ -53,7 +53,7 @@ public class SecurityConfig {
                         .requestMatchers("/jobportal/jobs/admin/**").hasRole("ADMIN")
 
                         // Profile (protected)
-                        // .requestMatchers("/api/profile/**").authenticated()
+                        .requestMatchers("/api/profile/**").authenticated()
 
                         .anyRequest().permitAll()
                 )
@@ -79,6 +79,8 @@ public class SecurityConfig {
                 "https://*.netlify.app",
                 "https://sparkling-medovik-f868d7.netlify.app",
                 "jobportalbyrrr.netlify.app",
+                        "https://jobportalbyrrr.netlify.app",   // ✅ CORRECT ORIGIN (important)
+
                 "https://jobportalserver-production-0346.up.railway.app",
                 "*"   // ← optional for testing; remove in production if needed
         ));
