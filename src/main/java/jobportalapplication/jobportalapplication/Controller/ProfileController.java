@@ -44,7 +44,14 @@
         }
 
         @GetMapping("/user/{id}")
-        public Optional<User> getUserById(@PathVariable Long id){
-            return service.getUserById(id);
+        public ResponseEntity<?> getUserById(@PathVariable Long id) {
+            Optional<User> user = service.getUserById(id);
+
+            if (user.isPresent()) {
+                return ResponseEntity.ok(user.get());  // always adds CORS headers
+            } else {
+                return ResponseEntity.status(404).body("User not found");
+            }
         }
+
     }

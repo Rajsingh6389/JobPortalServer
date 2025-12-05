@@ -48,6 +48,7 @@ public class SecurityConfig {
                         .requestMatchers("/jobportal/jobs/**").permitAll()
 
                         .requestMatchers("/jobportal/jobs/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/profile/user/**").permitAll()
 
                         .requestMatchers("/api/profile/**").authenticated()
 
