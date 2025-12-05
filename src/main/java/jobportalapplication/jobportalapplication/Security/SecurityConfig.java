@@ -35,43 +35,54 @@ public class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+
                 .authorizeHttpRequests(auth -> auth
 
+                        // Allow OPTIONS for all (CORS fix)
                         .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
-                 
 
-                        .requestMatchers(
-                                "/api/auth/login",
-                                "/api/auth/signup",
-                                "/api/auth/all"
-                        ).permitAll()
+                        // Public auth APIs
+                        .requestMatchers("/api/auth/login",
+                                         "/api/auth/signup",
+                                         "/api/auth/all").permitAll()
 
+                        // Public modules
                         .requestMatchers("/api/resume/**").permitAll()
                         .requestMatchers("/api/payment/**").permitAll()
                         .requestMatchers("/jobportal/jobs/**").permitAll()
 
-                        .requestMatchers("/jobportal/jobs/admin/**").hasRole("ADMIN")
+                        // Public access to any user profile by ID
                         .requestMatchers("/api/profile/user/**").permitAll()
 
-                        .requestMatchers("/api/profile/**").authenticated()
+                        // Private (requires JWT)
+                        .requestMatchers("/api/profile/update").authenticated()
+                        .requestMatchers("/api/profile").authenticated()
 
                         .anyRequest().permitAll()
                 )
+
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
-    // ⭐ FINAL CORRECT CORS CONFIG
+    // FINAL & CORRECT CORS CONFIG (required for Railway + React)
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
 
         config.setAllowCredentials(true);
 
-        config.setAllowedOrigins(List.of(
+        // IMPORTANT: Use allowedOriginPatterns instead of allowedOrigins
+        config.setAllowedOriginPatterns(List.of(
+                "http://localhost:*",
                 "http://localhost:5173",
+<<<<<<< HEAD
+=======
+                "https://*.netlify.app",
+                "https://sparkling-medovik-f868d7.netlify.app",
+>>>>>>> 7699644bac2c48e41839c31456de758ae4f7e5bd
                 "https://jobportalbyrrr.netlify.app",
                 "https://jobportalapplication-production.up.railway.app"
         ));
