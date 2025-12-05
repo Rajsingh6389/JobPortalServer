@@ -22,26 +22,40 @@ public class GeminiAIService {
 
     private final ObjectMapper mapper = new ObjectMapper();
 
+    public String generateResume(String prompt) throws Exception {
 
-    // -------------------------------------------------------------
-    // UNIVERSAL GEMINI PROMPT HANDLER
-    // -------------------------------------------------------------
-    public String sendPrompt(String prompt) throws Exception {
+        String finalPrompt = """
+                You are an expert ATS resume generator.
+                Write a professional resume with:
+                - Summary
+                - Skills
+                - Experience (3 bullet points each)
+                - Projects
+                - Education
+                - Certifications
+
+                User prompt:
+                """ + prompt;
 
         CloseableHttpClient client = HttpClients.createDefault();
 
+        // FINAL URL
         URI uri = URI.create(apiUrl + "?key=" + apiKey);
-        HttpPost post = new HttpPost(uri);
+        System.out.println("Calling Gemini URL: " + uri);
 
+        HttpPost post = new HttpPost(uri);
         post.addHeader("Content-Type", "application/json");
 
-        // Gemini request body (NEW format)
+
+        /* -----------------------------------------
+         *  FIXED REQUEST BODY (new Gemini standard)
+         * ----------------------------------------- */
         Map<String, Object> body = Map.of(
                 "contents", List.of(
                         Map.of(
                                 "role", "user",
                                 "parts", List.of(
-                                        Map.of("text", prompt)
+                                        Map.of("text", finalPrompt)
                                 )
                         )
                 )
@@ -60,6 +74,9 @@ public class GeminiAIService {
 
             Map data = mapper.readValue(entity.getContent(), Map.class);
 
+            // Debug raw response
+            System.out.println("Gemini RAW Response: " + data);
+
             List candidates = (List) data.get("candidates");
             if (candidates == null || candidates.isEmpty()) {
                 return "Gemini Error: candidates empty.";
@@ -77,79 +94,13 @@ public class GeminiAIService {
             for (Object p : parts) {
                 Map part = (Map) p;
                 Object text = part.get("text");
-                if (text != null) result.append(text.toString()).append("\n");
+                if (text != null) {
+                    result.append(text.toString()).append("\n");
+                }
             }
 
-            return result.toString().trim();
+            String output = result.toString().trim();
+            return output.isEmpty() ? "Gemini Error: Empty text returned." : output;
         }
-    }
-
-
-    // -------------------------------------------------------------
-    // RESUME SECTION GENERATOR
-    // Called by /api/ai/resume/{section}
-    // -------------------------------------------------------------
-    public String generateResumeSection(String section, String userPrompt) throws Exception {
-
-        String prompt = """
-                You are an expert ATS resume writer.
-                Generate ONLY the %s section.
-                Requirements:
-                - Bullet points when appropriate
-                - No storytelling
-                - Professional tone only
-                - Resume style formatting
-                - ATS-friendly keywords
-                - Short, factual lines
-
-                User Input:
-                %s
-                """.formatted(section.toUpperCase(), userPrompt);
-
-        return sendPrompt(prompt);
-    }
-
-
-    // -------------------------------------------------------------
-    // AI COLLEGE AUTOCOMPLETE
-    // Called by /api/ai/resume/college-suggest
-    // -------------------------------------------------------------
-    public String generateCollegeSuggestions(String query) throws Exception {
-
-        String prompt = """
-                You are an Indian College Autocomplete API.
-                Return ONLY a JSON array of college names similar to the query.
-
-                Rules:
-                - No explanation
-                - No numbering
-                - Only JSON array output
-
-                User Query: "%s"
-
-                Example Output:
-                ["IIT Delhi", "Delhi University", "DTU"]
-                """.formatted(query);
-
-        String raw = sendPrompt(prompt);
-
-        return cleanJsonArray(raw);
-    }
-
-
-    // -------------------------------------------------------------
-    // ENSURES AI ALWAYS RETURNS CLEAN JSON ARRAY
-    // -------------------------------------------------------------
-    public String cleanJsonArray(String raw) {
-
-        int start = raw.indexOf("[");
-        int end = raw.lastIndexOf("]");
-
-        if (start != -1 && end != -1) {
-            return raw.substring(start, end + 1).trim();
-        }
-
-        // fallback to empty JSON array
-        return "[]";
     }
 }
