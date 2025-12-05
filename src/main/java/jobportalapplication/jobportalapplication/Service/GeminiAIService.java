@@ -22,19 +22,20 @@ public class GeminiAIService {
 
     private final ObjectMapper mapper = new ObjectMapper();
 
-    /**
-     * UNIVERSAL Gemini API Caller
-     * Accepts a plain prompt and returns plain text
-     */
+
+    // -------------------------------------------------------------
+    // UNIVERSAL GEMINI PROMPT HANDLER
+    // -------------------------------------------------------------
     public String sendPrompt(String prompt) throws Exception {
 
         CloseableHttpClient client = HttpClients.createDefault();
 
         URI uri = URI.create(apiUrl + "?key=" + apiKey);
-
         HttpPost post = new HttpPost(uri);
+
         post.addHeader("Content-Type", "application/json");
 
+        // Gemini request body (NEW format)
         Map<String, Object> body = Map.of(
                 "contents", List.of(
                         Map.of(
@@ -83,9 +84,11 @@ public class GeminiAIService {
         }
     }
 
-    /**
-     * Resume Section Generator
-     */
+
+    // -------------------------------------------------------------
+    // RESUME SECTION GENERATOR
+    // Called by /api/ai/resume/{section}
+    // -------------------------------------------------------------
     public String generateResumeSection(String section, String userPrompt) throws Exception {
 
         String prompt = """
@@ -93,10 +96,11 @@ public class GeminiAIService {
                 Generate ONLY the %s section.
                 Requirements:
                 - Bullet points when appropriate
-                - Short, factual statements
-                - No stories
-                - No extra sections
-                - ATS-optimized text
+                - No storytelling
+                - Professional tone only
+                - Resume style formatting
+                - ATS-friendly keywords
+                - Short, factual lines
 
                 User Input:
                 %s
@@ -105,14 +109,21 @@ public class GeminiAIService {
         return sendPrompt(prompt);
     }
 
-    /**
-     * AI College Autocomplete
-     */
+
+    // -------------------------------------------------------------
+    // AI COLLEGE AUTOCOMPLETE
+    // Called by /api/ai/resume/college-suggest
+    // -------------------------------------------------------------
     public String generateCollegeSuggestions(String query) throws Exception {
 
         String prompt = """
                 You are an Indian College Autocomplete API.
-                Return ONLY a JSON array of colleges that match the user query.
+                Return ONLY a JSON array of college names similar to the query.
+
+                Rules:
+                - No explanation
+                - No numbering
+                - Only JSON array output
 
                 User Query: "%s"
 
@@ -125,16 +136,20 @@ public class GeminiAIService {
         return cleanJsonArray(raw);
     }
 
-    /**
-     * Cleans AI output so frontend always receives valid JSON
-     */
+
+    // -------------------------------------------------------------
+    // ENSURES AI ALWAYS RETURNS CLEAN JSON ARRAY
+    // -------------------------------------------------------------
     public String cleanJsonArray(String raw) {
+
         int start = raw.indexOf("[");
         int end = raw.lastIndexOf("]");
 
         if (start != -1 && end != -1) {
             return raw.substring(start, end + 1).trim();
         }
+
+        // fallback to empty JSON array
         return "[]";
     }
 }

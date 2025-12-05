@@ -16,23 +16,22 @@ public class ResumeAIController {
 
     private final GeminiAIService aiService;
 
-    // ------------------------------
-    // GENERIC SECTION HANDLER
-    // ------------------------------
+    // ----------------------------------------------------
+    // SECTION-BASED AI GENERATION (summary, experience etc.)
+    // ----------------------------------------------------
     @PostMapping("/{section}")
     public ResponseEntity<String> generateResumeSection(
             @PathVariable String section,
             @RequestBody AIPromptRequest req
     ) {
-
         try {
 
             if (req.getPrompt() == null || req.getPrompt().isBlank()) {
                 return ResponseEntity.badRequest().body("Prompt is required");
             }
 
-            String finalPrompt = buildSectionPrompt(section, req.getPrompt());
-            String result = aiService.generateResume(finalPrompt);
+            // Use the new method in your GeminiAIService
+            String result = aiService.generateResumeSection(section, req.getPrompt());
 
             return ResponseEntity.ok(result);
 
@@ -43,9 +42,9 @@ public class ResumeAIController {
         }
     }
 
-    // ------------------------------
+    // ----------------------------------------------------
     // AI COLLEGE AUTOCOMPLETE ENDPOINT
-    // ------------------------------
+    // ----------------------------------------------------
     @PostMapping("/college-suggest")
     public ResponseEntity<?> suggestColleges(@RequestBody Map<String, String> req) {
 
@@ -56,24 +55,8 @@ public class ResumeAIController {
                 return ResponseEntity.ok("[]");
             }
 
-            String prompt = """
-                    You are an Indian College Autocomplete API.
-                    Your job: return ONLY a JSON array of college names matching the user's text.
-                    - No explanation
-                    - No additional text
-                    - No formatting outside JSON array
-                    - Do NOT include numbers or ranking
-                    
-                    User input: "%s"
-                    
-                    Return format example:
-                    ["Delhi University", "IIT Delhi", "DTU"]
-                    """.formatted(query);
-
-            String aiResponse = aiService.generateResume(prompt);
-
-            // Ensure valid JSON array
-            String cleanJson = cleanJsonArray(aiResponse);
+            // NEW: Use your Gemini AI service autocomplete method
+            String cleanJson = aiService.generateCollegeSuggestions(query);
 
             return ResponseEntity.ok(cleanJson);
 
@@ -81,41 +64,5 @@ public class ResumeAIController {
             e.printStackTrace();
             return ResponseEntity.ok("[]");
         }
-    }
-
-    // ------------------------------
-    // Prompt builder for resume sections
-    // ------------------------------
-    private String buildSectionPrompt(String section, String userPrompt) {
-        return """
-                You are an expert ATS Resume Generator.
-                Generate ONLY the %s section of the resume.
-
-                Requirements:
-                - Clean formatted text
-                - No storytelling, strictly resume style
-                - Bullet points when needed
-                - Short, factual sentences
-                - ATS-friendly wording
-
-                User Input:
-                %s
-                """.formatted(section.toUpperCase(), userPrompt);
-    }
-
-    // ------------------------------
-    // Clean JSON from AI output
-    // Ensures frontend can safely parse
-    // ------------------------------
-    private String cleanJsonArray(String raw) {
-
-        int start = raw.indexOf("[");
-        int end = raw.lastIndexOf("]");
-
-        if (start != -1 && end != -1) {
-            return raw.substring(start, end + 1).trim();
-        }
-
-        return "[]";
     }
 }
