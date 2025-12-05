@@ -72,11 +72,25 @@ public class SecurityConfig {
 
         config.setAllowCredentials(true);
 
+<<<<<<< HEAD
         config.setAllowedOrigins(List.of(
                 "http://localhost:5173",  // React local dev
                 "https://sparkling-medovik-f868d7.netlify.app", // your Netlify site
                 "https://jobportalbyrrr.netlify.app", // FIXED missing protocol
                 "https://jobportalapplication-production.up.railway.app" // your real backend
+=======
+        // 🔥 FIX: use allowedOriginPatterns instead of allowedOrigins
+        config.setAllowedOriginPatterns(List.of(
+                "http://localhost:*",
+                "http://localhost:5173",
+                "https://*.netlify.app",
+                "https://sparkling-medovik-f868d7.netlify.app",
+                "jobportalbyrrr.netlify.app",
+                        "https://jobportalbyrrr.netlify.app",   // ✅ CORRECT ORIGIN (important)
+
+                "https://jobportalserver-production-0346.up.railway.app",
+                "*"   // ← optional for testing; remove in production if needed
+>>>>>>> aff41aeffee11146f870aa00bbd0ee196b232d0d
         ));
 
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
