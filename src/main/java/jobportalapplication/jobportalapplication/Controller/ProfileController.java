@@ -47,11 +47,9 @@
         public ResponseEntity<?> getUserById(@PathVariable Long id) {
             Optional<User> user = service.getUserById(id);
 
-            if (user.isPresent()) {
-                return ResponseEntity.ok(user.get());  // always adds CORS headers
-            } else {
-                return ResponseEntity.status(404).body("User not found");
-            }
+            // Always return 200 OK so CORS headers are added
+            return ResponseEntity.ok(user.orElse(null));
         }
+
 
     }

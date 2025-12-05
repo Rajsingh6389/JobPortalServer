@@ -72,7 +72,6 @@ public class SecurityConfig {
 
         config.setAllowedOrigins(List.of(
                 "http://localhost:5173",
-                "https://sparkling-medovik-f868d7.netlify.app",
                 "https://jobportalbyrrr.netlify.app",
                 "https://jobportalapplication-production.up.railway.app"
         ));
