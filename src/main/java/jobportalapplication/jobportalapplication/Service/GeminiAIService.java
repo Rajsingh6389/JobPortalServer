@@ -22,40 +22,25 @@ public class GeminiAIService {
 
     private final ObjectMapper mapper = new ObjectMapper();
 
-    public String generateResume(String prompt) throws Exception {
-
-        String finalPrompt = """
-                You are an expert ATS resume generator.
-                Write a professional resume with:
-                - Summary
-                - Skills
-                - Experience (3 bullet points each)
-                - Projects
-                - Education
-                - Certifications
-
-                User prompt:
-                """ + prompt;
+    /**
+     * UNIVERSAL Gemini API Caller
+     * Accepts a plain prompt and returns plain text
+     */
+    public String sendPrompt(String prompt) throws Exception {
 
         CloseableHttpClient client = HttpClients.createDefault();
 
-        // FINAL URL
         URI uri = URI.create(apiUrl + "?key=" + apiKey);
-        System.out.println("Calling Gemini URL: " + uri);
 
         HttpPost post = new HttpPost(uri);
         post.addHeader("Content-Type", "application/json");
 
-
-        /* -----------------------------------------
-         *  FIXED REQUEST BODY (new Gemini standard)
-         * ----------------------------------------- */
         Map<String, Object> body = Map.of(
                 "contents", List.of(
                         Map.of(
                                 "role", "user",
                                 "parts", List.of(
-                                        Map.of("text", finalPrompt)
+                                        Map.of("text", prompt)
                                 )
                         )
                 )
@@ -74,9 +59,6 @@ public class GeminiAIService {
 
             Map data = mapper.readValue(entity.getContent(), Map.class);
 
-            // Debug raw response
-            System.out.println("Gemini RAW Response: " + data);
-
             List candidates = (List) data.get("candidates");
             if (candidates == null || candidates.isEmpty()) {
                 return "Gemini Error: candidates empty.";
@@ -94,13 +76,65 @@ public class GeminiAIService {
             for (Object p : parts) {
                 Map part = (Map) p;
                 Object text = part.get("text");
-                if (text != null) {
-                    result.append(text.toString()).append("\n");
-                }
+                if (text != null) result.append(text.toString()).append("\n");
             }
 
-            String output = result.toString().trim();
-            return output.isEmpty() ? "Gemini Error: Empty text returned." : output;
+            return result.toString().trim();
         }
+    }
+
+    /**
+     * Resume Section Generator
+     */
+    public String generateResumeSection(String section, String userPrompt) throws Exception {
+
+        String prompt = """
+                You are an expert ATS resume writer.
+                Generate ONLY the %s section.
+                Requirements:
+                - Bullet points when appropriate
+                - Short, factual statements
+                - No stories
+                - No extra sections
+                - ATS-optimized text
+
+                User Input:
+                %s
+                """.formatted(section.toUpperCase(), userPrompt);
+
+        return sendPrompt(prompt);
+    }
+
+    /**
+     * AI College Autocomplete
+     */
+    public String generateCollegeSuggestions(String query) throws Exception {
+
+        String prompt = """
+                You are an Indian College Autocomplete API.
+                Return ONLY a JSON array of colleges that match the user query.
+
+                User Query: "%s"
+
+                Example Output:
+                ["IIT Delhi", "Delhi University", "DTU"]
+                """.formatted(query);
+
+        String raw = sendPrompt(prompt);
+
+        return cleanJsonArray(raw);
+    }
+
+    /**
+     * Cleans AI output so frontend always receives valid JSON
+     */
+    public String cleanJsonArray(String raw) {
+        int start = raw.indexOf("[");
+        int end = raw.lastIndexOf("]");
+
+        if (start != -1 && end != -1) {
+            return raw.substring(start, end + 1).trim();
+        }
+        return "[]";
     }
 }
