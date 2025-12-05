@@ -72,19 +72,15 @@ public class SecurityConfig {
 
         config.setAllowCredentials(true);
 
-        // 🔥 FIX: use allowedOriginPatterns instead of allowedOrigins
-        config.setAllowedOriginPatterns(List.of(
-                "http://localhost:*",
-                "http://localhost:5173",
-                "https://*.netlify.app",
-                "https://sparkling-medovik-f868d7.netlify.app",
-                "jobportalbyrrr.netlify.app",
-                "https://jobportalserver-production-0346.up.railway.app",
-                "*"   // ← optional for testing; remove in production if needed
+        config.setAllowedOrigins(List.of(
+                "http://localhost:5173",  // React local dev
+                "https://sparkling-medovik-f868d7.netlify.app", // your Netlify site
+                "https://jobportalbyrrr.netlify.app", // FIXED missing protocol
+                "https://jobportalapplication-production.up.railway.app" // your real backend
         ));
 
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
-        config.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept"));
+        config.setAllowedHeaders(List.of("*"));
         config.setExposedHeaders(List.of("Authorization"));
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
@@ -92,6 +88,7 @@ public class SecurityConfig {
 
         return source;
     }
+
 
     @Bean
     public AuthenticationManager authenticationManager(HttpSecurity http) throws Exception {
