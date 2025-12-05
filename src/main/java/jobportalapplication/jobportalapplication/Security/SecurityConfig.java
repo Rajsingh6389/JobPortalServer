@@ -49,6 +49,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/resume/**").permitAll()
                         .requestMatchers("/api/payment/**").permitAll()
                         .requestMatchers("/jobportal/jobs/**").permitAll()
+                        .requestMatchers("/api/ai/resume/**").permitAll()
 
                         .requestMatchers("/jobportal/jobs/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/profile/user/**").permitAll()
