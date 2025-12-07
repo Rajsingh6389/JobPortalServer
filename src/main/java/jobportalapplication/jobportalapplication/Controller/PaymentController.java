@@ -46,8 +46,7 @@ public class PaymentController {
                     "orderId", order.get("orderId"),
                     "amount", order.get("amount"),
                     "currency", order.get("currency"),
-                    "clientId", cashfreeService.getClientId(),
-                    "cashfreeResponse", order.get("cashfreeResponse")
+                    "cashfreeResponse", order.get("cashfreeResponse")  // 🔥 FIXED
             ));
 
         } catch (Exception e) {
