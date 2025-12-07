@@ -35,31 +35,36 @@ public class CashfreeService {
                 : "https://sandbox.cashfree.com/pg/orders";
     }
 
-    public Map<String, Object> createOrder(int amountInRupees,
-                                           String currency,
-                                           String receipt,
-                                           String returnUrl) throws Exception {
+    public Map<String, Object> createOrder(
+            int amountInRupees,
+            String currency,
+            String receipt,
+            String returnUrl
+    ) throws Exception {
 
         CloseableHttpClient client = HttpClients.createDefault();
         HttpPost post = new HttpPost(getBaseUrl());
 
-        // ⭐️ Correct Headers
         post.addHeader("x-client-id", clientId);
         post.addHeader("x-client-secret", clientSecret);
-        post.addHeader("x-api-version", "2023-08-01");  // 🔥 FIXED API VERSION
+        post.addHeader("x-api-version", "2023-08-01");
         post.addHeader("Content-Type", "application/json");
 
         Map<String, Object> body = new HashMap<>();
         body.put("order_id", receipt);
         body.put("order_amount", (double) amountInRupees);
         body.put("order_currency", currency);
-        body.put("return_url", returnUrl);
 
-        Map<String, Object> customer = Map.of(
-                "customer_id", receipt,
-                "customer_email", "rm2739159@gmail.com",
-                "customer_phone", "9125474036"
-        );
+        // ⭐ Correct location for return_url
+        Map<String, Object> meta = new HashMap<>();
+        meta.put("return_url", returnUrl);
+        body.put("order_meta", meta);
+
+        // ⭐ Customer info — you can pass actual user values later
+        Map<String, Object> customer = new HashMap<>();
+        customer.put("customer_id", receipt);
+        customer.put("customer_email", "rm2739159@gmail.com");
+        customer.put("customer_phone", "9125474036");
 
         body.put("customer_details", customer);
 
@@ -85,7 +90,7 @@ public class CashfreeService {
 
         get.addHeader("x-client-id", clientId);
         get.addHeader("x-client-secret", clientSecret);
-        get.addHeader("x-api-version", "2023-08-01");  // 🔥 FIXED API VERSION
+        get.addHeader("x-api-version", "2023-08-01");
 
         var response = client.execute(get);
         return new String(response.getEntity().getContent().readAllBytes());

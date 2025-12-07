@@ -1,5 +1,7 @@
 package jobportalapplication.jobportalapplication.Controller;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jobportalapplication.jobportalapplication.Repository.UserRepository;
 import jobportalapplication.jobportalapplication.Service.CashfreeService;
 import org.springframework.http.ResponseEntity;
@@ -20,17 +22,16 @@ public class PaymentController {
         this.userRepository = userRepository;
     }
 
-    // ⭐ CREATE CASHFREE ORDER
+    // ⭐ CREATE ORDER
     @PostMapping("/create-order")
     public ResponseEntity<?> createOrder(@RequestBody Map<String, Object> req) {
         try {
-            Integer amount = (Integer) req.getOrDefault("amount", 99);
+            Integer amount = (Integer) req.getOrDefault("amount", 29);
             Long userId = Long.valueOf(String.valueOf(req.get("userId")));
 
-            String receipt = "resume_" + userId + "_" + System.currentTimeMillis();
+            String receipt = "order_" + userId + "_" + System.currentTimeMillis();
 
-            // Detect Prod vs Localhost
-            String frontendUrl =
+            String returnUrl =
                     System.getenv("ENV") != null && System.getenv("ENV").equalsIgnoreCase("prod")
                             ? "https://jobportalbyrrr.netlify.app/dreamjob?order_id={order_id}"
                             : "http://localhost:5173/dreamjob?order_id={order_id}";
@@ -39,43 +40,47 @@ public class PaymentController {
                     amount,
                     "INR",
                     receipt,
-                    frontendUrl
+                    returnUrl
             );
 
-            return ResponseEntity.ok(Map.of(
-                    "orderId", order.get("orderId"),
-                    "amount", order.get("amount"),
-                    "currency", order.get("currency"),
-                    "cashfreeResponse", order.get("cashfreeResponse")  // 🔥 FIXED
-            ));
+            return ResponseEntity.ok(order);
 
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
+        } catch (Exception ex) {
+            return ResponseEntity.status(500).body(Map.of("error", ex.getMessage()));
         }
     }
 
-    // ⭐ VERIFY CASHFREE PAYMENT
+    // ⭐ VERIFY PAYMENT AND UPDATE DB
     @PostMapping("/verify")
     public ResponseEntity<?> verifyPayment(@RequestBody Map<String, Object> payload) {
-
         try {
             Long userId = Long.valueOf(String.valueOf(payload.get("userId")));
-            String orderId = (String) payload.get("orderId");
+            String orderId = String.valueOf(payload.get("orderId"));
 
-            String statusJson = cashfreeService.verifyPayment(orderId);
+            // ✅ FIXED TYPO HERE
+            String raw = cashfreeService.verifyPayment(orderId);
 
-            boolean isPaid = statusJson.contains("\"order_status\":\"PAID\"");
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode json = mapper.readTree(raw);
 
-            if (!isPaid) {
+            String orderStatus = json.get("order_status").asText();
+            String paymentStatus = json.has("payment_status")
+                    ? json.get("payment_status").asText()
+                    : "";
+
+            boolean paid =
+                    "PAID".equalsIgnoreCase(orderStatus) ||
+                            "SUCCESS".equalsIgnoreCase(paymentStatus);
+
+            if (!paid) {
                 return ResponseEntity.ok(Map.of(
                         "success", false,
-                        "message", "Payment not completed",
-                        "status", statusJson
+                        "orderStatus", orderStatus,
+                        "paymentStatus", paymentStatus
                 ));
             }
 
-            // Update user as Premium
+            // ⭐ UPDATE USER PAYMENT STATUS IN DB
             userRepository.findById(userId).ifPresent(user -> {
                 user.setPaymentStatus(true);
                 user.setPaymentDate(LocalDateTime.now());
@@ -84,13 +89,14 @@ public class PaymentController {
 
             return ResponseEntity.ok(Map.of(
                     "success", true,
-                    "message", "Payment verified successfully",
-                    "status", statusJson
+                    "orderStatus", orderStatus,
+                    "paymentStatus", paymentStatus
             ));
 
         } catch (Exception ex) {
-            ex.printStackTrace();
             return ResponseEntity.status(500).body(Map.of("error", ex.getMessage()));
         }
     }
+
 }
+
