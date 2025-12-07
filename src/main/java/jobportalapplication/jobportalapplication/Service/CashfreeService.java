@@ -39,9 +39,7 @@ public class CashfreeService {
         return this.clientId;
     }
 
-    /**
-     * Create Cashfree Order (with return_url)
-     */
+    // ⭐ FIXED METHOD — NOW SUPPORTS return_url
     public Map<String, Object> createOrder(int amountInRupees,
                                            String currency,
                                            String receipt,
@@ -59,18 +57,18 @@ public class CashfreeService {
         body.put("order_id", receipt);
         body.put("order_amount", (double) amountInRupees);
         body.put("order_currency", currency);
-        body.put("return_url", returnUrl);  // 🔥 REQUIRED FOR REDIRECT AFTER PAYMENT
+        body.put("return_url", returnUrl);   // 🔥 REQUIRED FOR PAYMENT LINK
 
         Map<String, Object> customer = Map.of(
                 "customer_id", receipt,
                 "customer_email", "demo@example.com",
                 "customer_phone", "9999999999"
         );
+
         body.put("customer_details", customer);
 
         ObjectMapper mapper = new ObjectMapper();
-        String json = mapper.writeValueAsString(body);
-        post.setEntity(new StringEntity(json));
+        post.setEntity(new StringEntity(mapper.writeValueAsString(body)));
 
         var response = client.execute(post);
         String responseJson = new String(response.getEntity().getContent().readAllBytes());
@@ -83,11 +81,8 @@ public class CashfreeService {
         );
     }
 
-    /**
-     * Verify Cashfree Payment Status
-     */
+    // Verify payment
     public String verifyPayment(String orderId) throws Exception {
-
         String url = getBaseUrl() + "/" + orderId;
 
         CloseableHttpClient client = HttpClients.createDefault();
