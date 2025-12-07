@@ -35,11 +35,6 @@ public class CashfreeService {
                 : "https://sandbox.cashfree.com/pg/orders";
     }
 
-    public String getClientId() {
-        return this.clientId;
-    }
-
-    // ⭐ FIXED METHOD — NOW SUPPORTS return_url
     public Map<String, Object> createOrder(int amountInRupees,
                                            String currency,
                                            String receipt,
@@ -48,16 +43,17 @@ public class CashfreeService {
         CloseableHttpClient client = HttpClients.createDefault();
         HttpPost post = new HttpPost(getBaseUrl());
 
+        // ⭐️ Correct Headers
         post.addHeader("x-client-id", clientId);
         post.addHeader("x-client-secret", clientSecret);
-        post.addHeader("x-api-version", "2022-09-01");
+        post.addHeader("x-api-version", "2023-08-01");  // 🔥 FIXED API VERSION
         post.addHeader("Content-Type", "application/json");
 
         Map<String, Object> body = new HashMap<>();
         body.put("order_id", receipt);
         body.put("order_amount", (double) amountInRupees);
         body.put("order_currency", currency);
-        body.put("return_url", returnUrl);   // 🔥 REQUIRED FOR PAYMENT LINK
+        body.put("return_url", returnUrl);
 
         Map<String, Object> customer = Map.of(
                 "customer_id", receipt,
@@ -81,7 +77,6 @@ public class CashfreeService {
         );
     }
 
-    // Verify payment
     public String verifyPayment(String orderId) throws Exception {
         String url = getBaseUrl() + "/" + orderId;
 
@@ -90,7 +85,7 @@ public class CashfreeService {
 
         get.addHeader("x-client-id", clientId);
         get.addHeader("x-client-secret", clientSecret);
-        get.addHeader("x-api-version", "2022-09-01");
+        get.addHeader("x-api-version", "2023-08-01");  // 🔥 FIXED API VERSION
 
         var response = client.execute(get);
         return new String(response.getEntity().getContent().readAllBytes());
