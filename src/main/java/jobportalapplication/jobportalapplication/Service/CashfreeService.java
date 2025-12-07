@@ -26,11 +26,11 @@ public class CashfreeService {
     ) {
         this.clientId = clientId;
         this.clientSecret = clientSecret;
-        this.env = env; // "test" or "prod"
+        this.env = env;
     }
 
     private String getBaseUrl() {
-        return env.equals("prod")
+        return env.equalsIgnoreCase("prod")
                 ? "https://api.cashfree.com/pg/orders"
                 : "https://sandbox.cashfree.com/pg/orders";
     }
@@ -40,9 +40,12 @@ public class CashfreeService {
     }
 
     /**
-     * Create Cashfree Order
+     * Create Cashfree Order (with return_url)
      */
-    public Map<String, Object> createOrder(int amountInRupees, String currency, String receipt) throws Exception {
+    public Map<String, Object> createOrder(int amountInRupees,
+                                           String currency,
+                                           String receipt,
+                                           String returnUrl) throws Exception {
 
         CloseableHttpClient client = HttpClients.createDefault();
         HttpPost post = new HttpPost(getBaseUrl());
@@ -56,6 +59,7 @@ public class CashfreeService {
         body.put("order_id", receipt);
         body.put("order_amount", (double) amountInRupees);
         body.put("order_currency", currency);
+        body.put("return_url", returnUrl);  // 🔥 REQUIRED FOR REDIRECT AFTER PAYMENT
 
         Map<String, Object> customer = Map.of(
                 "customer_id", receipt,
@@ -71,7 +75,6 @@ public class CashfreeService {
         var response = client.execute(post);
         String responseJson = new String(response.getEntity().getContent().readAllBytes());
 
-        // Return same format as your Razorpay code
         return Map.of(
                 "orderId", receipt,
                 "amount", amountInRupees,

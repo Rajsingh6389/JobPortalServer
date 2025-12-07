@@ -20,9 +20,7 @@ public class PaymentController {
         this.userRepository = userRepository;
     }
 
-    /**
-     * Create Cashfree Order
-     */
+    // ⭐ CREATE CASHFREE ORDER
     @PostMapping("/create-order")
     public ResponseEntity<?> createOrder(@RequestBody Map<String, Object> req) {
         try {
@@ -31,14 +29,24 @@ public class PaymentController {
 
             String receipt = "resume_" + userId + "_" + System.currentTimeMillis();
 
-            // Create order via Cashfree service
-            Map<String, Object> order = cashfreeService.createOrder(amount, "INR", receipt);
+            // Detect Prod vs Localhost
+            String frontendUrl =
+                    System.getenv("ENV") != null && System.getenv("ENV").equalsIgnoreCase("prod")
+                            ? "https://jobportalbyrrr.netlify.app/dreamjob?order_id={order_id}"
+                            : "http://localhost:5173/dreamjob?order_id={order_id}";
+
+            Map<String, Object> order = cashfreeService.createOrder(
+                    amount,
+                    "INR",
+                    receipt,
+                    frontendUrl
+            );
 
             return ResponseEntity.ok(Map.of(
                     "orderId", order.get("orderId"),
                     "amount", order.get("amount"),
                     "currency", order.get("currency"),
-                    "clientId", cashfreeService.getClientId(), // similar to Razorpay keyId
+                    "clientId", cashfreeService.getClientId(),
                     "cashfreeResponse", order.get("cashfreeResponse")
             ));
 
@@ -48,10 +56,7 @@ public class PaymentController {
         }
     }
 
-
-    /**
-     * Verify Cashfree Payment Status
-     */
+    // ⭐ VERIFY CASHFREE PAYMENT
     @PostMapping("/verify")
     public ResponseEntity<?> verifyPayment(@RequestBody Map<String, Object> payload) {
 
@@ -59,10 +64,8 @@ public class PaymentController {
             Long userId = Long.valueOf(String.valueOf(payload.get("userId")));
             String orderId = (String) payload.get("orderId");
 
-            // Call Cashfree to get order status
             String statusJson = cashfreeService.verifyPayment(orderId);
 
-            // Simple check → If paid, unlock user
             boolean isPaid = statusJson.contains("\"order_status\":\"PAID\"");
 
             if (!isPaid) {
@@ -73,7 +76,7 @@ public class PaymentController {
                 ));
             }
 
-            // ✔ Update user payment status
+            // Update user as Premium
             userRepository.findById(userId).ifPresent(user -> {
                 user.setPaymentStatus(true);
                 user.setPaymentDate(LocalDateTime.now());
