@@ -1,7 +1,7 @@
 package jobportalapplication.jobportalapplication.Controller;
 
 import jobportalapplication.jobportalapplication.Repository.UserRepository;
-import jobportalapplication.jobportalapplication.Service.RazorpayService;
+import jobportalapplication.jobportalapplication.Service.CashfreeService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -12,16 +12,16 @@ import java.util.Map;
 @RequestMapping("/api/payment")
 public class PaymentController {
 
-    private final RazorpayService razorpayService;
+    private final CashfreeService cashfreeService;
     private final UserRepository userRepository;
 
-    public PaymentController(RazorpayService razorpayService, UserRepository userRepository) {
-        this.razorpayService = razorpayService;
+    public PaymentController(CashfreeService cashfreeService, UserRepository userRepository) {
+        this.cashfreeService = cashfreeService;
         this.userRepository = userRepository;
     }
 
     /**
-     * Create Razorpay Order
+     * Create Cashfree Order
      */
     @PostMapping("/create-order")
     public ResponseEntity<?> createOrder(@RequestBody Map<String, Object> req) {
@@ -31,13 +31,15 @@ public class PaymentController {
 
             String receipt = "resume_" + userId + "_" + System.currentTimeMillis();
 
-            var order = razorpayService.createOrder(amount, "INR", receipt);
+            // Create order via Cashfree service
+            Map<String, Object> order = cashfreeService.createOrder(amount, "INR", receipt);
 
             return ResponseEntity.ok(Map.of(
                     "orderId", order.get("orderId"),
                     "amount", order.get("amount"),
                     "currency", order.get("currency"),
-                    "keyId", razorpayService.getKeyId()  // ✔ Send actual keyId
+                    "clientId", cashfreeService.getClientId(), // similar to Razorpay keyId
+                    "cashfreeResponse", order.get("cashfreeResponse")
             ));
 
         } catch (Exception e) {
@@ -46,8 +48,9 @@ public class PaymentController {
         }
     }
 
+
     /**
-     * Verify Payment Signature
+     * Verify Cashfree Payment Status
      */
     @PostMapping("/verify")
     public ResponseEntity<?> verifyPayment(@RequestBody Map<String, Object> payload) {
@@ -55,13 +58,19 @@ public class PaymentController {
         try {
             Long userId = Long.valueOf(String.valueOf(payload.get("userId")));
             String orderId = (String) payload.get("orderId");
-            String paymentId = (String) payload.get("paymentId");
-            String signature = (String) payload.get("signature");
 
-            boolean valid = razorpayService.verifySignature(orderId, paymentId, signature);
+            // Call Cashfree to get order status
+            String statusJson = cashfreeService.verifyPayment(orderId);
 
-            if (!valid) {
-                return ResponseEntity.ok(Map.of("success", false, "message", "Invalid Signature"));
+            // Simple check → If paid, unlock user
+            boolean isPaid = statusJson.contains("\"order_status\":\"PAID\"");
+
+            if (!isPaid) {
+                return ResponseEntity.ok(Map.of(
+                        "success", false,
+                        "message", "Payment not completed",
+                        "status", statusJson
+                ));
             }
 
             // ✔ Update user payment status
@@ -71,7 +80,11 @@ public class PaymentController {
                 userRepository.save(user);
             });
 
-            return ResponseEntity.ok(Map.of("success", true));
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "Payment verified successfully",
+                    "status", statusJson
+            ));
 
         } catch (Exception ex) {
             ex.printStackTrace();
