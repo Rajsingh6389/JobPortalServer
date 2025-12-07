@@ -57,8 +57,8 @@ public class CashfreeService {
 
         Map<String, Object> customer = Map.of(
                 "customer_id", receipt,
-                "customer_email", "demo@example.com",
-                "customer_phone", "9999999999"
+                "customer_email", "rm2739159@gmail.com",
+                "customer_phone", "9125474036"
         );
 
         body.put("customer_details", customer);
