@@ -63,8 +63,8 @@ public class CashfreeService {
         // ⭐ Customer info — you can pass actual user values later
         Map<String, Object> customer = new HashMap<>();
         customer.put("customer_id", receipt);
-        customer.put("customer_email", "rm2739159@gmail.com");
-        customer.put("customer_phone", "9125474036");
+        customer.put("customer_email", "unknown@gmail.com");
+        customer.put("customer_phone", "99999999");
 
         body.put("customer_details", customer);
 
