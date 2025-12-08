@@ -14,6 +14,8 @@ public class ResumeAIController {
     @Autowired
     private GeminiAIService aiService;
 
+
+
     // -----------------------------------------------------------
     // FULL RESUME GENERATOR USING aiService.generateResume(PROMPT)
     // -----------------------------------------------------------
@@ -36,4 +38,25 @@ public class ResumeAIController {
                     .body("AI Error: " + e.getMessage());
         }
     }
+    @PostMapping("/chat")
+    public ResponseEntity<?> chat(@RequestBody AIPromptRequest req) {
+
+        try {
+            if (req.getPrompt() == null || req.getPrompt().isBlank()) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("reply", "Prompt is required"));
+            }
+
+            // Generic AI response
+            String aiReply = aiService.generateChat(req.getPrompt());
+
+            return ResponseEntity.ok(Map.of("reply", aiReply));
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("reply", "AI Error: " + e.getMessage()));
+        }
+    }
+
 }

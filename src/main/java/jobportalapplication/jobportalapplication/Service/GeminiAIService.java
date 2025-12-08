@@ -103,4 +103,8 @@ public class GeminiAIService {
             return output.isEmpty() ? "Gemini Error: Empty text returned." : output;
         }
     }
+    public String generateChat(String prompt) throws Exception {
+        return generateResume(prompt); // or your generic Gemini generate() method
+    }
+
 }
