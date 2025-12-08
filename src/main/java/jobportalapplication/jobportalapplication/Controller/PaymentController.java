@@ -22,7 +22,7 @@ public class PaymentController {
         this.userRepository = userRepository;
     }
 
-    // ⭐ CREATE ORDER
+    // ⭐ CREATE ORDER (LIVE MODE → ALWAYS USE HTTPS)
     @PostMapping("/create-order")
     public ResponseEntity<?> createOrder(@RequestBody Map<String, Object> req) {
         try {
@@ -31,10 +31,8 @@ public class PaymentController {
 
             String receipt = "order_" + userId + "_" + System.currentTimeMillis();
 
-            String returnUrl =
-                    System.getenv("ENV") != null && System.getenv("ENV").equalsIgnoreCase("prod")
-                            ? "https://jobportalbyrrr.netlify.app/dreamjob?order_id={order_id}"
-                            : "http://localhost:5173/dreamjob?order_id={order_id}";
+            // 🔥 ALWAYS HTTPS — localhost not allowed in LIVE Cashfree
+            String returnUrl = "https://jobportalbyrrr.netlify.app/dreamjob?order_id={order_id}";
 
             Map<String, Object> order = cashfreeService.createOrder(
                     amount,
@@ -50,14 +48,14 @@ public class PaymentController {
         }
     }
 
-    // ⭐ VERIFY PAYMENT AND UPDATE DB
+    // ⭐ VERIFY PAYMENT & UPDATE DB
     @PostMapping("/verify")
     public ResponseEntity<?> verifyPayment(@RequestBody Map<String, Object> payload) {
         try {
             Long userId = Long.valueOf(String.valueOf(payload.get("userId")));
             String orderId = String.valueOf(payload.get("orderId"));
 
-            // ✅ FIXED TYPO HERE
+            // 🔥 FIXED: removed typo (`orderI   d`)
             String raw = cashfreeService.verifyPayment(orderId);
 
             ObjectMapper mapper = new ObjectMapper();
@@ -80,7 +78,7 @@ public class PaymentController {
                 ));
             }
 
-            // ⭐ UPDATE USER PAYMENT STATUS IN DB
+            // ⭐ UPDATE USER IN DATABASE
             userRepository.findById(userId).ifPresent(user -> {
                 user.setPaymentStatus(true);
                 user.setPaymentDate(LocalDateTime.now());
@@ -97,6 +95,4 @@ public class PaymentController {
             return ResponseEntity.status(500).body(Map.of("error", ex.getMessage()));
         }
     }
-
 }
-
