@@ -22,40 +22,64 @@ public class GeminiAIService {
 
     private final ObjectMapper mapper = new ObjectMapper();
 
+    /* ============================================================
+       1️⃣ RESUME GENERATOR METHOD
+       ============================================================ */
     public String generateResume(String prompt) throws Exception {
 
         String finalPrompt = """
                 You are an expert ATS resume generator.
                 Write a professional resume with:
-                - Summary
-                - Skills
-                - Experience (3 bullet points each)
-                - Projects
+                - A summary
+                - Skills section
+                - Experience section (3 bullet points each)
+                - Project section
                 - Education
                 - Certifications
+                Make it clean, professional, and ATS optimized.
 
-                User prompt:
+                User content:
                 """ + prompt;
+
+        return callGemini(finalPrompt);
+    }
+
+    /* ============================================================
+       2️⃣ GENERAL CHAT AI METHOD (USED BY VOICE AGENT)
+       ============================================================ */
+    public String generateChat(String prompt) throws Exception {
+
+        String chatPrompt = """
+                You are a helpful and intelligent AI assistant.
+                Answer clearly and concisely.
+                Do NOT format like a resume.
+                Respond conversationally.
+
+                Question:
+                """ + prompt;
+
+        return callGemini(chatPrompt);
+    }
+
+    /* ============================================================
+       CORE METHOD THAT CALLS GEMINI API
+       ============================================================ */
+    private String callGemini(String prompt) throws Exception {
 
         CloseableHttpClient client = HttpClients.createDefault();
 
-        // FINAL URL
         URI uri = URI.create(apiUrl + "?key=" + apiKey);
         System.out.println("Calling Gemini URL: " + uri);
 
         HttpPost post = new HttpPost(uri);
         post.addHeader("Content-Type", "application/json");
 
-
-        /* -----------------------------------------
-         *  FIXED REQUEST BODY (new Gemini standard)
-         * ----------------------------------------- */
         Map<String, Object> body = Map.of(
                 "contents", List.of(
                         Map.of(
                                 "role", "user",
                                 "parts", List.of(
-                                        Map.of("text", finalPrompt)
+                                        Map.of("text", prompt)
                                 )
                         )
                 )
@@ -74,7 +98,6 @@ public class GeminiAIService {
 
             Map data = mapper.readValue(entity.getContent(), Map.class);
 
-            // Debug raw response
             System.out.println("Gemini RAW Response: " + data);
 
             List candidates = (List) data.get("candidates");
@@ -94,17 +117,11 @@ public class GeminiAIService {
             for (Object p : parts) {
                 Map part = (Map) p;
                 Object text = part.get("text");
-                if (text != null) {
-                    result.append(text.toString()).append("\n");
-                }
+                if (text != null) result.append(text.toString()).append("\n");
             }
 
             String output = result.toString().trim();
             return output.isEmpty() ? "Gemini Error: Empty text returned." : output;
         }
     }
-    public String generateChat(String prompt) throws Exception {
-        return generateResume(prompt); // or your generic Gemini generate() method
-    }
-
 }
