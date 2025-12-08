@@ -95,4 +95,17 @@ public class PaymentController {
             return ResponseEntity.status(500).body(Map.of("error", ex.getMessage()));
         }
     }
+    @GetMapping("/check-paid/{userId}")
+    public ResponseEntity<?> checkPaid(@PathVariable Long userId) {
+
+        return userRepository.findById(userId)
+                .map(user -> ResponseEntity.ok(Map.of(
+                        "paid", user.getPaymentStatus(),
+                        "paymentDate", user.getPaymentDate()
+                )))
+                .orElseGet(() -> ResponseEntity.status(404).body(Map.of(
+                        "error", "User not found"
+                )));
+    }
+
 }
