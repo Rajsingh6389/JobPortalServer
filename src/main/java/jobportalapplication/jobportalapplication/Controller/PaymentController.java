@@ -26,13 +26,13 @@ public class PaymentController {
     @PostMapping("/create-order")
     public ResponseEntity<?> createOrder(@RequestBody Map<String, Object> req) {
         try {
-            Integer amount = (Integer) req.getOrDefault("amount", 29);
+            Integer amount = (Integer) req.getOrDefault("amount", 1);
             Long userId = Long.valueOf(String.valueOf(req.get("userId")));
 
             String receipt = "order_" + userId + "_" + System.currentTimeMillis();
 
             // 🔥 ALWAYS HTTPS — localhost not allowed in LIVE Cashfree
-            String returnUrl = "https://jobportalbyrrr.netlify.app/dreamjob?order_id={order_id}";
+            String returnUrl = "https://jobportalbyrrr.netlify.app/dreamjob?order_id=" + receipt;
 
             Map<String, Object> order = cashfreeService.createOrder(
                     amount,
