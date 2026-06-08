@@ -53,6 +53,7 @@ public class SecurityConfig {
 
                         .requestMatchers("/jobportal/jobs/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/profile/user/**").permitAll()
+                        .requestMatchers("/health/*").permitAll()
 
                         .requestMatchers("/api/profile/**").authenticated()
 
@@ -71,12 +72,12 @@ public class SecurityConfig {
 
         config.setAllowCredentials(true);
 
-        config.setAllowedOrigins(List.of(
-                "http://localhost:5173",
-                "https://sparkling-medovik-f868d7.netlify.app",
-                "https://jobportalbyrrr.netlify.app",
-                "https://jobportalapplication-production.up.railway.app"
-        ));
+        config.setAllowedOriginPatterns(List.of(
+            "http://localhost:*",
+            "https://*.netlify.app",
+            "http://*.amazonaws.com",
+            "https://*.railway.app"
+    ));
 
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
